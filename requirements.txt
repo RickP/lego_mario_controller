@@ -1,2 +1,4 @@
-asyncio
-bleak
+bleak~=0.7.1
+pynput~=1.7.1
+wxPython~=4.1.0
+wxasync~=0.41
