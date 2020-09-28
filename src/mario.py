@@ -93,8 +93,19 @@ class MarioController:
     def notification_handler(self, sender, data):
         # Camera sensor data
         if data[0] == 8:
+
+            # RGB code
+            if data[5] == 0x0:
+                if data[4] == 0xb8:
+                    self.gui.cam_field.SetLabel("Start tile")
+                    self.current_tile = 3
+                if data[4] == 0xb7:
+                    self.gui.cam_field.SetLabel("Goal tile")
+                    self.current_tile = 4
+                print("Barcode: " + " ".join(hex(n) for n in data))
+
             # Red tile
-            if data[6] == 0x15:
+            elif data[6] == 0x15:
                 self.gui.cam_field.SetLabel("Red tile")
                 self.current_tile = 1
             # Green tile
@@ -105,6 +116,8 @@ class MarioController:
             elif data[6] == 0x1a:
                 self.gui.cam_field.SetLabel("No tile")
                 self.current_tile = 0
+
+
         # Accelerometer data
         elif data[0] == 7:
             self.current_x = int((self.current_x*0.5) + (MarioController.signed(data[4])*0.5))
