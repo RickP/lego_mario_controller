@@ -12,6 +12,10 @@ KEY_LEAN_BACKWARD = Key.left
 KEY_RED_TILE = 'b'
 KEY_GREEN_TILE = Key.down
 
+# Timing
+BUTTON_TIME_DEFAULT = 0.1
+BUTTON_TIME_JUMP = 1.5
+
 # BLE stuff
 LEGO_CHARACTERISTIC_UUID = "00001624-1212-efde-1623-785feabcd123"
 SUBSCRIBE_IMU_COMMAND = bytearray([0x0A, 0x00, 0x41, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x01])
@@ -29,22 +33,32 @@ class MarioFrame(wx.Frame):
     def initGUI(self):
 
         panel = wx.Panel(self)
+
         font = wx.Font(15, wx.DEFAULT, wx.NORMAL, wx.DEFAULT)
 
         self.status_field = wx.StaticText(self, label="", style=wx.ALIGN_CENTER)
         self.status_field.SetFont(font)
 
-        self.cam_field = wx.StaticText(self, label="                        ", style=wx.ALIGN_LEFT)
+        self.cam_field = wx.StaticText(self, label="", style=wx.ALIGN_LEFT, size=wx.Size(50, wx.DefaultCoord))
         self.cam_field.SetFont(font)
 
-        self.accel_field = wx.StaticText(self, label="", style=wx.ALIGN_RIGHT)
+        self.accel_field = wx.StaticText(self, label="", style=wx.ALIGN_LEFT, size=wx.Size(200, wx.DefaultCoord))
         self.accel_field.SetFont(font)
 
+        self.key_switch_label = wx.StaticText(self, label="Send keys: ", style=wx.ALIGN_RIGHT, size=wx.Size(100, wx.DefaultCoord))
+        self.key_switch_label.SetFont(font)
+
+        self.key_switch = wx.CheckBox(self)
+
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.status_field, flag=wx.ALL, border=5)
+        vbox.Add(self.status_field, flag=wx.ALL, border=5, )
+
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.Add(self.cam_field, flag=wx.ALL, border=5)
-        hbox.Add(self.accel_field, flag=wx.ALL, border=5)
+        hbox.Add(self.cam_field, flag=wx.ALL|wx.FIXED_MINSIZE, border=5)
+        hbox.Add(self.accel_field, flag=wx.ALL|wx.FIXED_MINSIZE, border=5)
+        hbox.Add(self.key_switch_label, flag=wx.ALL|wx.FIXED_MINSIZE, border=5)
+        hbox.Add(self.key_switch, flag=wx.ALL, border=5)
+
         vbox.Add(hbox, flag=wx.ALL, border=5)
 
         self.SetSizer(vbox)
@@ -65,15 +79,15 @@ class MarioController:
         return char - 256 if char > 127 else char
 
     async def process_keys(self):
-        if self.is_connected:
+        if self.is_connected and self.gui.key_switch.GetValue():
             if self.current_tile == 1:
                 self.keyboard.press(KEY_RED_TILE)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(BUTTON_TIME_DEFAULT)
                 self.keyboard.release(KEY_RED_TILE)
                 self.current_tile = 0
             elif self.current_tile == 2:
                 self.keyboard.press(KEY_GREEN_TILE)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(BUTTON_TIME_DEFAULT)
                 self.keyboard.release(KEY_GREEN_TILE)
                 self.current_tile = 0
             if self.current_z > 10:
@@ -85,7 +99,7 @@ class MarioController:
                 self.keyboard.release(KEY_LEAN_FORWARD)
             if self.current_x > 5:
                 self.keyboard.press(KEY_JUMP)
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(BUTTON_TIME_JUMP)
                 self.keyboard.release(KEY_JUMP)
         await asyncio.sleep(0.05)
 
@@ -130,6 +144,8 @@ class MarioController:
         while True:
             self.is_connected = False
             self.gui.status_field.SetLabel("Looking for Mario. Switch on and press Bluetooth key.")
+            self.gui.cam_field.SetLabel("")
+            self.gui.accel_field.SetLabel("")
             devices = await BleakScanner.discover()
             for d in devices:
                 if d.name.lower().startswith("lego mario"):
