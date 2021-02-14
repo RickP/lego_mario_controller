@@ -148,7 +148,7 @@ class MarioController:
             self.gui.accel_field.SetLabel("")
             devices = await BleakScanner.discover()
             for d in devices:
-                if d.name.lower().startswith("lego mario"):
+                if d.name.lower().startswith("lego mario") or LEGO_CHARACTERISTIC_UUID in d.metadata['uuids']:
                     self.gui.status_field.SetLabel("Found Mario!")
                     try:
                         async with BleakClient(d.address) as client:
